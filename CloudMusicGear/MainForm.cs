@@ -1,6 +1,7 @@
 ﻿using CloudMusicGear.Properties;
 using System;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace CloudMusicGear
 {
@@ -9,6 +10,8 @@ namespace CloudMusicGear
         public MainForm()
         {
             InitializeComponent();
+
+            ThreadPool.RegisterWaitForSingleObject(Program.ProgramStarted, OnProgramStarted, null, -1, false);
         }
 
         private void portNum_ValueChanged(object sender, EventArgs e)
@@ -38,22 +41,15 @@ namespace CloudMusicGear
             Config.DownloadQuality = downloadQuality.Text;
         }
 
-        private void useOverseas_CheckedChanged(object sender, EventArgs e)
+        private void forceIp_CheckedChanged(object sender, EventArgs e)
         {
-            useOverseasCdn.Enabled = useOverseas.Checked;
-            overseasCdnAddress.Enabled = useOverseas.Checked;
-            Config.UseOverseas = useOverseas.Checked;
+            ipAddress.Enabled = forceIp.Checked;
+            Config.ForceIp = forceIp.Checked;
         }
 
-        private void useOverseasCdn_CheckedChanged(object sender, EventArgs e)
+        private void ipAddress_SelectedIndexChanged(object sender, EventArgs e)
         {
-            overseasCdnAddress.Enabled = useOverseasCdn.Checked;
-            Config.UseOverseasCdn = useOverseasCdn.Checked;
-        }
-
-        private void overseasCdnAddress_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            Config.OverseasCdnAddress = overseasCdnAddress.Text;
+            Config.IpAddress = ipAddress.Text;
         }
 
         private void usePac_CheckedChanged(object sender, EventArgs e)
@@ -111,10 +107,8 @@ namespace CloudMusicGear
             forceDownload.Checked = Config.ForceDownloadQuality;
             downloadQuality.Text = Config.DownloadQuality;
 
-            useOverseas.Checked = Config.UseOverseas;
-            useOverseasCdn.Checked = Config.UseOverseasCdn;
-            overseasCdnAddress.Enabled = Config.UseOverseas && Config.UseOverseasCdn;
-            overseasCdnAddress.Text = Config.OverseasCdnAddress;
+            forceIp.Checked = Config.ForceIp;
+            ipAddress.Text = Config.IpAddress;
 
             usePac.Checked = Config.UsePac;
             pacPortNum.Value = Config.PacPort;
@@ -188,6 +182,11 @@ namespace CloudMusicGear
         private void autoMinimize_CheckedChanged(object sender, EventArgs e)
         {
             Config.AutoMinimize = autoMinimize.Checked;
+        }
+
+        private void OnProgramStarted(object state, bool timeout)
+        {
+            MessageBox.Show("CloudMusicGear is already running.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 }

@@ -28,6 +28,14 @@ namespace CloudMusicGear
             s["X-OverrideGateway"] = Config.ProxyAddress;
         }
 
+        private static void NeedSetIp(Session s)
+        {
+            if (s.fullUrl.EndsWith(".mp3"))
+            {
+                s["X-OverrideHost"] = Config.IpAddress;
+            }
+        }
+
         public static void Start()
         {
             LogEntry("Starting proxy...");
@@ -38,6 +46,10 @@ namespace CloudMusicGear
             if (Config.UseProxy)
             {
                 FiddlerApplication.BeforeRequest += NeedSetProxy;
+            }
+            if (Config.ForceIp)
+            {
+                FiddlerApplication.BeforeRequest += NeedSetIp;
             }
             FiddlerApplication.BeforeResponse += OnResponse;
             LogEntry($"Proxy started, listening at port {Config.Port}");
@@ -60,6 +72,10 @@ namespace CloudMusicGear
             if (Config.UseProxy)
             {
                 FiddlerApplication.BeforeRequest -= NeedSetProxy;
+            }
+            if (Config.ForceIp)
+            {
+                FiddlerApplication.BeforeRequest -= NeedSetIp;
             }
             FiddlerApplication.BeforeResponse -= OnResponse;
             FiddlerApplication.Shutdown();
@@ -90,7 +106,8 @@ namespace CloudMusicGear
                     // It should include album / playlist / artist / search pages.
                     if (url.Contains("/eapi/v3/song/detail/") || url.Contains("/eapi/v1/album/") || url.Contains("/eapi/v3/playlist/detail") ||
                         url.Contains("/eapi/batch") || url.Contains("/eapi/cloudsearch/pc") || url.Contains("/eapi/v1/artist") ||
-                        url.Contains("/eapi/v1/search/get"))
+                        url.Contains("/eapi/v1/search/get") || url.Contains("/eapi/song/enhance/privilege") ||
+                        url.Contains("/eapi/v1/discovery/new/songs") || url.Contains("/eapi/v1/play/record"))
                     {
                         string modified = ModifyDetailApi(s.GetResponseBodyAsString());
                         s.utilSetResponseBody(modified);
@@ -203,6 +220,7 @@ namespace CloudMusicGear
             JObject root = JObject.Parse(originalContent);
             string songId = root["data"]["id"].Value<string>();
             string newUrl = NeteaseIdProcess.GetUrl(songId, ConvertQuality(Config.DownloadQuality, "nQuality"));
+            LogEntry($"New URL is {newUrl}");
             root["data"]["url"] = newUrl;
             root["data"]["br"] = ConvertQuality(Config.DownloadQuality, "Bitrate");
             root["data"]["code"] = "200";
@@ -246,6 +264,7 @@ namespace CloudMusicGear
             JObject root = JObject.Parse(originalContent);
             string songId = root["data"][0]["id"].Value<string>();
             string newUrl = NeteaseIdProcess.GetUrl(songId, ConvertQuality(Config.PlaybackQuality, "nQuality"));
+            LogEntry($"New URL is {newUrl}");
             root["data"][0]["url"] = newUrl;
             root["data"][0]["br"] = ConvertQuality(Config.PlaybackQuality, "Bitrate");
             root["data"][0]["code"] = "200";
