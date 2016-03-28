@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -11,15 +12,22 @@ namespace CloudMusicGear
     /// </summary>
     public static class NeteaseIdProcess
     {
+        private static readonly Dictionary<string, string> SongDetailHeader = new Dictionary<string, string>()
+        {
+            { "cookie", "os=pc" }
+        };
+
         /// <summary>
         /// Get song url from original song ID.
         /// </summary>
         /// <param name="songId">Song ID.</param>
-        /// <param name="nQuality">Quality. Accepts: bMusic, lMusic, mMusic, hMusic.</param>
+        /// <param name="nQuality">Quality. Accepts: b, l, m, h.</param>
         /// <returns>Song URL.</returns>
         public static string GetUrl(string songId, string nQuality)
         {
-            string dfsId = GetDfsId(Utility.GetPage($"http://music.163.com/api/song/detail?id={songId}&ids=[{songId}]"), nQuality);
+            string data = $@"c=[{{""id"":""{songId}"",""v"":0}}]";
+            string page = Utility.PostPage("http://music.163.com/api/v2/song/detail", data, SongDetailHeader);
+            string dfsId = GetDfsId(page, nQuality);
             return GenerateUrl(dfsId);
         }
 
@@ -62,24 +70,24 @@ namespace CloudMusicGear
 
             // Downgrade if we don't have higher quality...
 
-            if (nQuality == "hMusic" && !root["songs"][0]["hMusic"].HasValues)
+            if (nQuality == "h" && !root["songs"][0]["h"].HasValues)
             {
-                nQuality = "mMusic";
+                nQuality = "m";
             }
-            if (nQuality == "mMusic" && !root["songs"][0]["mMusic"].HasValues)
+            if (nQuality == "m" && !root["songs"][0]["m"].HasValues)
             {
-                nQuality = "lMusic";
+                nQuality = "l";
             }
-            if (nQuality == "lMusic" && !root["songs"][0]["lMusic"].HasValues)
+            if (nQuality == "l" && !root["songs"][0]["l"].HasValues)
             {
-                nQuality = "bMusic";
-            }
-
-            if (nQuality == "bMusic" && !root["songs"][0]["bMusic"].HasValues)
-            {
+                nQuality = "b";
             }
 
-            return root["songs"][0][nQuality]["dfsId"].Value<string>();
+            if (nQuality == "b" && !root["songs"][0]["b"].HasValues)
+            {
+            }
+
+            return root["songs"][0][nQuality]["fid"].Value<string>();
         }
     }
 }
