@@ -115,36 +115,43 @@ namespace CloudMusicGear
                     // This is called when player tries to get the URL for a song.
                     else if (url.Contains("/eapi/song/enhance/player/url"))
                     {
-						Console.WriteLine (s.GetResponseBodyAsString ());
-						string code = GetPlayResponseCode (s.GetResponseBodyAsString ());
-						int br = int.Parse(GetPlaybackBitrateFromApi(s.GetResponseBodyAsString ()));
-						if (code != "200" || (Config.ForcePlaybackQuality && br < int.Parse(ConvertQuality(Config.PlaybackQuality, "Bitrate")))) {
-	                        string bitrate = GetPlaybackBitrateFromApi(s.GetResponseBodyAsString());
-	                        // Whatever current playback bitrate is, it's overriden.
-	                        if (Config.ForcePlaybackQuality)
-	                        {
-	                            bitrate = ConvertQuality(Config.PlaybackQuality, "Bitrate");
-	                            LogEntry($"Plackback bitrate is forced set to {bitrate}");
-	                        }
-	                        // We receive a wrong bitrate...
-	                        else if (bitrate == "0")
-	                        {
-	                            bitrate = Config.ForcePlaybackQuality ? ConvertQuality(Config.PlaybackQuality, "Bitrate") : "320000";
-	                            LogEntry($"Plackback bitrate is restored to {bitrate} as the given bitrate is not valid.");
-	                        }
-	                        // If we received an unexpected bitrate...
-	                        else if (bitrate != ConvertQuality(Config.PlaybackQuality, "Bitrate"))
-	                        {
-	                            LogEntry($"Plackback bitrate is switched to {bitrate} from {ConvertQuality(Config.PlaybackQuality, "Bitrate")}");
-	                        }
-	                        Config.PlaybackQuality = ConvertQuality(bitrate, "Full");
-	                        string modified = ModifyPlayerApi(s.GetResponseBodyAsString());
-	                        s.utilSetResponseBody(modified);
-						} else {
-							LogEntry ($"Got url from netease directly.");
-							string music_url = GetPlayResponseUrl (s.GetResponseBodyAsString ());
-							LogEntry ($"Original url is {music_url}");
-						}
+                        // If the song URL is returned properly, or the returned quality is higher than the forced quality, we do not override the song URL.
+                        // This is designed as premium users may require lossless audio file.
+                        if (GetPlayResponseCode(s.GetResponseBodyAsString()) != "200" ||
+                            (Config.ForcePlaybackQuality &&
+                             int.Parse(GetPlaybackBitrateFromApi(s.GetResponseBodyAsString())) <
+                             int.Parse(ConvertQuality(Config.PlaybackQuality, "Bitrate"))))
+                        {
+                            string bitrate = GetPlaybackBitrateFromApi(s.GetResponseBodyAsString());
+                            // Whatever current playback bitrate is, it's overriden.
+                            if (Config.ForcePlaybackQuality)
+                            {
+                                bitrate = ConvertQuality(Config.PlaybackQuality, "Bitrate");
+                                LogEntry($"Playback bitrate is forced set to {bitrate}");
+                            }
+                            // We receive a wrong bitrate...
+                            else if (bitrate == "0")
+                            {
+                                bitrate = Config.ForcePlaybackQuality
+                                    ? ConvertQuality(Config.PlaybackQuality, "Bitrate")
+                                    : "320000";
+                                LogEntry(
+                                    $"Playback bitrate is restored to {bitrate} as the given bitrate is not valid.");
+                            }
+                            // If we received an unexpected bitrate...
+                            else if (bitrate != ConvertQuality(Config.PlaybackQuality, "Bitrate"))
+                            {
+                                LogEntry(
+                                    $"Playback bitrate is switched to {bitrate} from {ConvertQuality(Config.PlaybackQuality, "Bitrate")}");
+                            }
+                            Config.PlaybackQuality = ConvertQuality(bitrate, "Full");
+                            string modified = ModifyPlayerApi(s.GetResponseBodyAsString());
+                            s.utilSetResponseBody(modified);
+                        }
+                        else
+                        {
+                            LogEntry($"Playback bitrate is not changed. The song URL is {GetPlayResponseUrl(s.GetResponseBodyAsString())}");
+                        }
                     }
 
                     // When we try to download a song, the API tells whether it exceeds the limit. Of course no!
@@ -157,37 +164,44 @@ namespace CloudMusicGear
                     // Similar to the player URL API, but used for download.
                     else if (url.Contains("/eapi/song/enhance/download/url"))
                     {
-						Console.WriteLine (s.GetResponseBodyAsString ());
-						string code = GetDownloadResponseCode (s.GetResponseBodyAsString ());
-						int br = int.Parse(GetDownloadBitrate(s.GetResponseBodyAsString ()));
-						if (code != "200" || (Config.ForceDownloadQuality && br < int.Parse(ConvertQuality(Config.DownloadQuality, "Bitrate")))) {
-	                        string bitrate = GetDownloadBitrate(s.GetResponseBodyAsString());
+                        // If the song URL is returned properly, or the returned quality is higher than the forced quality, we do not override the song URL.
+                        // This is designed as premium users may require lossless audio file.
+                        if (GetDownloadResponseCode(s.GetResponseBodyAsString()) != "200" ||
+                            (Config.ForceDownloadQuality &&
+                             int.Parse(GetDownloadBitrate(s.GetResponseBodyAsString())) <
+                             int.Parse(ConvertQuality(Config.DownloadQuality, "Bitrate"))))
+                        {
+                            string bitrate = GetDownloadBitrate(s.GetResponseBodyAsString());
 
-	                        // Whatever current download bitrate is, it's overriden.
-	                        if (Config.ForceDownloadQuality)
-	                        {
-	                            bitrate = ConvertQuality(Config.DownloadQuality, "Bitrate");
-	                            LogEntry($"Download bitrate is forced set to {bitrate}");
-	                        }
-	                        // We receive a wrong bitrate...
-	                        else if (bitrate == "0")
-	                        {
-	                            bitrate = Config.ForceDownloadQuality ? ConvertQuality(Config.DownloadQuality, "Bitrate") : "320000";
-	                            LogEntry($"Download bitrate is forced set to {bitrate} as the given bitrate is not valid.");
-	                        }
-	                        else if (bitrate != ConvertQuality(Config.DownloadQuality, "Bitrate"))
-	                        {
-	                            LogEntry($"Download bitrate is switched to {bitrate} from {ConvertQuality(Config.DownloadQuality, "Bitrate")}");
-	                        }
-	                        Config.DownloadQuality = ConvertQuality(bitrate, "Full");
+                            // Whatever current download bitrate is, it's overriden.
+                            if (Config.ForceDownloadQuality)
+                            {
+                                bitrate = ConvertQuality(Config.DownloadQuality, "Bitrate");
+                                LogEntry($"Download bitrate is forced set to {bitrate}");
+                            }
+                            // We receive a wrong bitrate...
+                            else if (bitrate == "0")
+                            {
+                                bitrate = Config.ForceDownloadQuality
+                                    ? ConvertQuality(Config.DownloadQuality, "Bitrate")
+                                    : "320000";
+                                LogEntry(
+                                    $"Download bitrate is forced set to {bitrate} as the given bitrate is not valid.");
+                            }
+                            else if (bitrate != ConvertQuality(Config.DownloadQuality, "Bitrate"))
+                            {
+                                LogEntry(
+                                    $"Download bitrate is switched to {bitrate} from {ConvertQuality(Config.DownloadQuality, "Bitrate")}");
+                            }
+                            Config.DownloadQuality = ConvertQuality(bitrate, "Full");
 
-	                        string modified = ModifyDownloadApi(s.GetResponseBodyAsString());
-	                        s.utilSetResponseBody(modified);
-						} else {
-							LogEntry ($"Got url from netease directly.");
-							string music_url = GetDownloadResponseUrl (s.GetResponseBodyAsString ());
-							LogEntry ($"Original url is {music_url}");
-						}
+                            string modified = ModifyDownloadApi(s.GetResponseBodyAsString());
+                            s.utilSetResponseBody(modified);
+                        }
+                        else
+                        {
+                            LogEntry($"Download bitrate is not changed. The song URL is {GetDownloadResponseUrl(s.GetResponseBodyAsString())}");
+                        }
                     }
                 }
             }
@@ -243,6 +257,54 @@ namespace CloudMusicGear
             JObject root = JObject.Parse(apiResult);
             string bitrate = root["data"]["br"].Value<string>();
             return bitrate;
+        }
+
+        /// <summary>
+        /// Get current response code for playback from API result.
+        /// </summary>
+        /// <param name="apiResult">API result containing playback response code.</param>
+        /// <returns>Current response code.</returns>
+        private static string GetPlayResponseCode(string apiResult)
+        {
+            JObject root = JObject.Parse(apiResult);
+            string code = root["data"][0]["code"].Value<string>();
+            return code;
+        }
+
+        /// <summary>
+        /// Get current response URL for playback from API result.
+        /// </summary>
+        /// <param name="apiResult">API result containing playback response URL.</param>
+        /// <returns>Current response URL.</returns>
+        private static string GetPlayResponseUrl(string apiResult)
+        {
+            JObject root = JObject.Parse(apiResult);
+            string url = root["data"][0]["url"].Value<string>();
+            return url;
+        }
+
+        /// <summary>
+        /// Get current response code for download from API result.
+        /// </summary>
+        /// <param name="apiResult">API result containing download response code.</param>
+        /// <returns>Current response code.</returns>
+        private static string GetDownloadResponseCode(string apiResult)
+        {
+            JObject root = JObject.Parse(apiResult);
+            string code = root["data"]["code"].Value<string>();
+            return code;
+        }
+
+        /// <summary>
+        /// Get current response URL for download from API result.
+        /// </summary>
+        /// <param name="apiResult">API result containing download response URL.</param>
+        /// <returns>Current response URL.</returns>
+        private static string GetDownloadResponseUrl(string apiResult)
+        {
+            JObject root = JObject.Parse(apiResult);
+            string url = root["data"]["url"].Value<string>();
+            return url;
         }
 
         /// <summary>
