@@ -207,34 +207,6 @@ namespace CloudMusicGear
             }
         }
 
-		private static string GetPlayResponseCode(string apiResult)
-		{
-			JObject root = JObject.Parse(apiResult);
-			string code = root["data"][0]["code"].Value<string>();
-			return code;
-		}
-
-		private static string GetPlayResponseUrl(string apiResult)
-		{
-			JObject root = JObject.Parse(apiResult);
-			string music_url = root ["data"] [0] ["url"].Value<string> ();
-			return music_url;
-		}
-
-		private static string GetDownloadResponseCode(string apiResult)
-		{
-			JObject root = JObject.Parse(apiResult);
-			string code = root["data"]["code"].Value<string>();
-			return code;
-		}
-
-		private static string GetDownloadResponseUrl(string apiResult)
-		{
-			JObject root = JObject.Parse(apiResult);
-			string music_url = root ["data"] ["url"].Value<string> ();
-			return music_url;
-		}
-
         /// <summary>
         /// Get current playback bitrate from API result.
         /// </summary>
